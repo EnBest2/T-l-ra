@@ -33,7 +33,7 @@ label {
     color: #e0e0e0;
 }
 
-input[type="number"], select {
+input[type="number"], input[type="text"], select {
     padding: 10px;
     border-radius: 8px;
     border: 1px solid #333;
@@ -97,4 +97,33 @@ button:hover {
 #detailsTable th {
     background-color: #333;
     color: #e0e0e0;
+}
+
+/* Naptár stílusok */
+#calendar-container {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    padding: 10px;
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.calendar-day {
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #333;
+    transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+    background-color: #444;
+}
+
+.calendar-day.selected {
+    background-color: #bb86fc;
+    color: #121212;
+    font-weight: bold;
 }
