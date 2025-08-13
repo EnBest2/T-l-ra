@@ -23,22 +23,23 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-let currentAction = 'none';
+let currentAction = 'none'; // 'leave' vagy 'overtime'
+let overtimeData = {};
 
 function setAction(action) {
     currentAction = action;
 }
 
+// A naptár generálása
 function renderCalendar() {
     const monthSelect = document.getElementById('monthSelect');
     const selectedMonth = monthSelect.value;
-    if (!selectedMonth) return;
-
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
     const calendarContainer = document.getElementById('calendar-container');
     calendarContainer.innerHTML = '';
     
+    // A hét napjainak fejléce
     const weekdays = ['H', 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'];
     weekdays.forEach(day => {
         const header = document.createElement('div');
@@ -48,7 +49,7 @@ function renderCalendar() {
     });
 
     const leaveDays = document.getElementById('leaveDays').value.split(',').filter(s => s);
-    const overtimeData = JSON.parse(document.getElementById('overtimeData').value || '{}');
+    overtimeData = JSON.parse(document.getElementById('overtimeDays').value || '{}');
 
     for (let day = 1; day <= daysInMonth; day++) {
         const currentDate = new Date(year, month - 1, day);
@@ -73,6 +74,7 @@ function renderCalendar() {
                 } else {
                     dayElement.classList.remove('overtime');
                     dayElement.classList.add('leave');
+                    delete overtimeData[dateString];
                 }
             } else if (currentAction === 'overtime') {
                 if (dayElement.classList.contains('overtime')) {
@@ -87,7 +89,7 @@ function renderCalendar() {
                     }
                 }
             }
-            updateLeaveAndOvertimeData(overtimeData);
+            updateLeaveAndOvertimeDays();
             calculateSalary();
         });
 
@@ -101,11 +103,11 @@ function renderCalendar() {
     }
 }
 
-function updateLeaveAndOvertimeData(overtimeData) {
-    const leaveDays = Array.from(document.querySelectorAll('.calendar-day.leave')).map(el => el.dataset.date);
+function updateLeaveAndOvertimeDays() {
+    const leaveDays = Array.from(document.querySelectorAll('.calendar-day.leave'))
+                               .map(el => el.dataset.date);
     document.getElementById('leaveDays').value = leaveDays.join(',');
-    
-    document.getElementById('overtimeData').value = JSON.stringify(overtimeData);
+    document.getElementById('overtimeDays').value = JSON.stringify(overtimeData);
 }
 
 function populateMonthSelect() {
@@ -121,19 +123,24 @@ function populateMonthSelect() {
     }
     monthSelect.addEventListener('change', () => {
         renderCalendar();
+        saveState();
         calculateSalary();
     });
+    renderCalendar();
 }
 
 function calculateSalary() {
     const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
     const selectedMonth = document.getElementById('monthSelect').value;
-    if (!selectedMonth) return;
-
     const isPerformanceBonusEnabled = document.getElementById('performanceBonus').checked;
     const isMorningShiftStart = document.getElementById('shiftStart').checked;
     const leaveDays = document.getElementById('leaveDays').value.split(',').filter(s => s);
-    const overtimeData = JSON.parse(document.getElementById('overtimeData').value || '{}');
+    overtimeData = JSON.parse(document.getElementById('overtimeDays').value || '{}');
+
+    if (isNaN(hourlyRate) || hourlyRate <= 0) {
+        //alert('Kérlek adj meg érvényes nettó órabért!');
+        return;
+    }
 
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -156,12 +163,12 @@ function calculateSalary() {
         
         const isHoliday = holidays.includes(dateString);
         const isLeave = leaveDays.includes(dateString);
-        const isOvertime = !!overtimeData[dateString];
+        const isOvertime = overtimeData[dateString];
 
         if (isHoliday || isLeave) {
             regularHours = 8;
             dailyWage = regularHours * hourlyRate;
-            dailyLabel = isHoliday ? `Ünnepnap (8 óra)` : `Szabadság (8 óra)`;
+            dailyLabel = isHoliday ? 'Ünnepnap' : 'Szabadság';
         } else if (isOvertime) {
             currentOvertimeHours = overtimeData[dateString];
             dailyWage = currentOvertimeHours * hourlyRate * 1.8;
@@ -178,15 +185,18 @@ function calculateSalary() {
 
             let currentShiftIsMorning = (isMorningShiftStart && weekNumber % 2 !== 0) || (!isMorningShiftStart && weekNumber % 2 === 0);
 
+            // Délelőtti műszak: 5:30-13:30 (8 óra)
             if (currentShiftIsMorning) {
                 regularHours = 8;
                 dailyWage = regularHours * hourlyRate;
-            } else {
+            }
+            // Délutáni műszak: 13:30-21:30 (8 óra)
+            else {
                 regularHours = 8;
                 const bonusHours = 3.5;
-                dailyWage = (regularHours * hourlyRate) + (bonusHours * hourlyRate * 0.3);
+                dailyWage = (regularHours) * hourlyRate + (bonusHours * hourlyRate * 0.3);
             }
-            dailyLabel = `${regularHours} óra`;
+            dailyLabel = regularHours > 0 ? `${regularHours} óra` : 'Szabadnap';
         }
         totalSalary += dailyWage;
 
@@ -198,7 +208,7 @@ function calculateSalary() {
     }
 
     if (isPerformanceBonusEnabled) {
-        totalSalary *= 1.1;
+        totalSalary *= 1.1; // 10% mozgóbér
     }
     
     document.getElementById('finalSalary').textContent = `${Math.round(totalSalary).toLocaleString('hu-HU')} Ft`;
@@ -215,7 +225,7 @@ function saveCalculation() {
     const savedCalculations = JSON.parse(localStorage.getItem('saved-calculations') || '[]');
     const newEntry = {
         date: new Date().toLocaleString('hu-HU'),
-        month: selectedMonth,
+        month: document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text,
         finalSalary: finalSalary,
         overtimePay: overtimePay,
         details: calculationDetails
@@ -232,7 +242,7 @@ function showHistoryModal() {
     
     const savedCalculations = JSON.parse(localStorage.getItem('saved-calculations') || '[]');
     if (savedCalculations.length === 0) {
-        historyContainer.innerHTML = '<p>Jelenleg nincs mentett előzmény.</p>';
+        historyContainer.innerHTML = 'Jelenleg nincs mentett előzmény.';
     } else {
         savedCalculations.forEach((calc, index) => {
             const entryDiv = document.createElement('div');
@@ -268,7 +278,7 @@ function saveState() {
     const state = {
         hourlyRate: document.getElementById('hourlyRate').value,
         leaveDays: document.getElementById('leaveDays').value,
-        overtimeData: document.getElementById('overtimeData').value,
+        overtimeDays: document.getElementById('overtimeDays').value, // Ezt a kulcsot használjuk az overtime adatok tárolására.
         monthSelect: document.getElementById('monthSelect').value,
         performanceBonus: document.getElementById('performanceBonus').checked,
         shiftStart: document.getElementById('shiftStart').checked
@@ -281,7 +291,7 @@ function loadState() {
     if (state) {
         document.getElementById('hourlyRate').value = state.hourlyRate;
         document.getElementById('leaveDays').value = state.leaveDays;
-        document.getElementById('overtimeData').value = state.overtimeData;
+        document.getElementById('overtimeDays').value = state.overtimeDays;
         document.getElementById('monthSelect').value = state.monthSelect;
         document.getElementById('performanceBonus').checked = state.performanceBonus;
         document.getElementById('shiftStart').checked = state.shiftStart;
@@ -290,15 +300,16 @@ function loadState() {
     }
 }
 
+// Az oldal betöltésekor
 document.addEventListener('DOMContentLoaded', () => {
     populateMonthSelect();
     loadState();
-    
+
     document.getElementById('setLeaveDay').addEventListener('click', () => setAction('leave'));
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
-    document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
-    
+    document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
+
     const modal = document.getElementById('historyModal');
     const closeBtn = document.querySelector('.close-btn');
     closeBtn.addEventListener('click', () => modal.style.display = 'none');
