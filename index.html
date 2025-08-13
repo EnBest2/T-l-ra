@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nettó Bér Kalkulátor</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="ikonok/app_icon_192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <div class="container">
@@ -21,7 +25,7 @@
             </div>
             <div id="calendar-container"></div>
             <input type="hidden" id="leaveDays">
-            <input type="hidden" id="overtimeData">
+            <input type="hidden" id="overtimeDays">
 
             <label for="monthSelect">Hónap:</label>
             <select id="monthSelect"></select>
@@ -37,7 +41,6 @@
             </div>
 
             <button onclick="calculateSalary()">Számítás</button>
-            <button id="saveCalculationBtn">Mentés</button>
             <button id="showHistoryBtn">Előzmények</button>
         </div>
 
