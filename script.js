@@ -1,4 +1,9 @@
-// A magyar ünnepnapok kiszámítása dinamikusan
+let currentAction = 'none';
+
+function setAction(action) {
+    currentAction = action;
+}
+
 function getHolidaysForYear(year) {
     const holidays = [];
     holidays.push(`${year}-01-01`, `${year}-05-01`, `${year}-08-20`, `${year}-10-23`, `${year}-11-01`, `${year}-12-25`, `${year}-12-26`);
@@ -15,7 +20,6 @@ function getHolidaysForYear(year) {
     return holidays;
 }
 
-// Segédfüggvény a dátumok kezeléséhez
 function formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -23,16 +27,10 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-let currentAction = 'none';
-
-function setAction(action) {
-    currentAction = action;
-}
-
-// A naptár generálása
 function renderCalendar() {
     const monthSelect = document.getElementById('monthSelect');
     const selectedMonth = monthSelect.value;
+    if (!selectedMonth) return;
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
     const calendarContainer = document.getElementById('calendar-container');
@@ -87,6 +85,7 @@ function renderCalendar() {
                 }
             }
             updateLeaveAndOvertimeData();
+            calculateSalary();
         });
 
         if (day === 1) {
@@ -104,12 +103,15 @@ function updateLeaveAndOvertimeData() {
                             .map(el => el.dataset.date);
     document.getElementById('leaveDays').value = leaveDays.join(',');
     
+    const overtimeDataElements = Array.from(document.querySelectorAll('.calendar-day.overtime'));
     const overtimeData = {};
-    Array.from(document.querySelectorAll('.calendar-day.overtime')).forEach(el => {
+    overtimeDataElements.forEach(el => {
         const date = el.dataset.date;
         const savedData = JSON.parse(document.getElementById('overtimeData').value || '{}');
         if (savedData[date]) {
             overtimeData[date] = savedData[date];
+        } else {
+             overtimeData[date] = 0;
         }
     });
     document.getElementById('overtimeData').value = JSON.stringify(overtimeData);
@@ -129,21 +131,23 @@ function populateMonthSelect() {
     monthSelect.addEventListener('change', () => {
         renderCalendar();
         saveState();
+        calculateSalary();
     });
-    renderCalendar();
 }
 
 function calculateSalary() {
     const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
     const selectedMonth = document.getElementById('monthSelect').value;
+    if (!selectedMonth) return;
+
     const isPerformanceBonusEnabled = document.getElementById('performanceBonus').checked;
     const isMorningShiftStart = document.getElementById('shiftStart').checked;
     const leaveDays = document.getElementById('leaveDays').value.split(',').filter(s => s);
     const overtimeData = JSON.parse(document.getElementById('overtimeData').value || '{}');
 
     if (isNaN(hourlyRate) || hourlyRate <= 0) {
-        alert('Kérlek adj meg érvényes nettó órabért!');
-        return;
+        //alert('Kérlek adj meg érvényes nettó órabért!');
+        //return;
     }
 
     const [year, month] = selectedMonth.split('-');
@@ -189,15 +193,12 @@ function calculateSalary() {
 
             let currentShiftIsMorning = (isMorningShiftStart && weekNumber % 2 !== 0) || (!isMorningShiftStart && weekNumber % 2 === 0);
 
-            // Délelőtti műszak: 5:30-13:30 (8 óra)
             if (currentShiftIsMorning) {
                 regularHours = 8;
                 dailyWage = regularHours * hourlyRate;
-            }
-            // Délutáni műszak: 13:30-21:30 (8 óra)
-            else {
+            } else {
                 regularHours = 8;
-                const bonusHours = 3.5; // 18:00 - 21:30 között (3.5 óra)
+                const bonusHours = 3.5;
                 dailyWage = (regularHours * hourlyRate) + (bonusHours * hourlyRate * 0.3);
             }
             dailyLabel = `${regularHours} óra`;
@@ -212,7 +213,7 @@ function calculateSalary() {
     }
 
     if (isPerformanceBonusEnabled) {
-        totalSalary *= 1.1; // 10% mozgóbér
+        totalSalary *= 1.1;
     }
     
     document.getElementById('finalSalary').textContent = `${Math.round(totalSalary).toLocaleString('hu-HU')} Ft`;
@@ -313,11 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
-    document.getElementById('monthSelect').addEventListener('change', () => {
-        renderCalendar();
-        calculateSalary();
-    });
-
+    
     const modal = document.getElementById('historyModal');
     const closeBtn = document.querySelector('.close-btn');
     closeBtn.addEventListener('click', () => modal.style.display = 'none');
@@ -326,14 +323,4 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = 'none';
         }
     });
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('service-worker.js').then(registration => {
-                console.log('SW regisztráció sikeres: ', registration.scope);
-            }).catch(err => {
-                console.log('SW regisztráció sikertelen: ', err);
-            });
-        });
-    }
 });
