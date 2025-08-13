@@ -1,9 +1,4 @@
-let currentAction = 'none';
-
-function setAction(action) {
-    currentAction = action;
-}
-
+// A magyar ünnepnapok kiszámítása dinamikusan
 function getHolidaysForYear(year) {
     const holidays = [];
     holidays.push(`${year}-01-01`, `${year}-05-01`, `${year}-08-20`, `${year}-10-23`, `${year}-11-01`, `${year}-12-25`, `${year}-12-26`);
@@ -20,6 +15,7 @@ function getHolidaysForYear(year) {
     return holidays;
 }
 
+// Segédfüggvény a dátumok kezeléséhez
 function formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -27,10 +23,17 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
+let currentAction = 'none';
+
+function setAction(action) {
+    currentAction = action;
+}
+
 function renderCalendar() {
     const monthSelect = document.getElementById('monthSelect');
     const selectedMonth = monthSelect.value;
     if (!selectedMonth) return;
+
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
     const calendarContainer = document.getElementById('calendar-container');
@@ -84,7 +87,7 @@ function renderCalendar() {
                     }
                 }
             }
-            updateLeaveAndOvertimeData();
+            updateLeaveAndOvertimeData(overtimeData);
             calculateSalary();
         });
 
@@ -98,22 +101,10 @@ function renderCalendar() {
     }
 }
 
-function updateLeaveAndOvertimeData() {
-    const leaveDays = Array.from(document.querySelectorAll('.calendar-day.leave'))
-                            .map(el => el.dataset.date);
+function updateLeaveAndOvertimeData(overtimeData) {
+    const leaveDays = Array.from(document.querySelectorAll('.calendar-day.leave')).map(el => el.dataset.date);
     document.getElementById('leaveDays').value = leaveDays.join(',');
     
-    const overtimeDataElements = Array.from(document.querySelectorAll('.calendar-day.overtime'));
-    const overtimeData = {};
-    overtimeDataElements.forEach(el => {
-        const date = el.dataset.date;
-        const savedData = JSON.parse(document.getElementById('overtimeData').value || '{}');
-        if (savedData[date]) {
-            overtimeData[date] = savedData[date];
-        } else {
-             overtimeData[date] = 0;
-        }
-    });
     document.getElementById('overtimeData').value = JSON.stringify(overtimeData);
 }
 
@@ -130,7 +121,6 @@ function populateMonthSelect() {
     }
     monthSelect.addEventListener('change', () => {
         renderCalendar();
-        saveState();
         calculateSalary();
     });
 }
@@ -144,11 +134,6 @@ function calculateSalary() {
     const isMorningShiftStart = document.getElementById('shiftStart').checked;
     const leaveDays = document.getElementById('leaveDays').value.split(',').filter(s => s);
     const overtimeData = JSON.parse(document.getElementById('overtimeData').value || '{}');
-
-    if (isNaN(hourlyRate) || hourlyRate <= 0) {
-        //alert('Kérlek adj meg érvényes nettó órabért!');
-        //return;
-    }
 
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -171,13 +156,13 @@ function calculateSalary() {
         
         const isHoliday = holidays.includes(dateString);
         const isLeave = leaveDays.includes(dateString);
+        const isOvertime = !!overtimeData[dateString];
 
         if (isHoliday || isLeave) {
             regularHours = 8;
             dailyWage = regularHours * hourlyRate;
             dailyLabel = isHoliday ? `Ünnepnap (8 óra)` : `Szabadság (8 óra)`;
-        } else if (overtimeData[dateString]) {
-            regularHours = 0;
+        } else if (isOvertime) {
             currentOvertimeHours = overtimeData[dateString];
             dailyWage = currentOvertimeHours * hourlyRate * 1.8;
             totalOvertimePay += dailyWage;
@@ -229,7 +214,7 @@ function saveCalculation() {
     
     const savedCalculations = JSON.parse(localStorage.getItem('saved-calculations') || '[]');
     const newEntry = {
-        date: new Date().toLocaleString(),
+        date: new Date().toLocaleString('hu-HU'),
         month: selectedMonth,
         finalSalary: finalSalary,
         overtimePay: overtimePay,
@@ -253,7 +238,7 @@ function showHistoryModal() {
             const entryDiv = document.createElement('div');
             entryDiv.classList.add('history-entry');
             entryDiv.innerHTML = `
-                <h4>${calc.month} havi fizetés</h4>
+                <h4>${calc.month} havi fizetés - ${calc.date}</h4>
                 <p>Nettó fizetés: ${calc.finalSalary}</p>
                 <p>Túlóra bér: ${calc.overtimePay}</p>
                 <button class="delete-btn" data-index="${index}">Törlés</button>
@@ -305,7 +290,6 @@ function loadState() {
     }
 }
 
-// Eseménykezelők
 document.addEventListener('DOMContentLoaded', () => {
     populateMonthSelect();
     loadState();
