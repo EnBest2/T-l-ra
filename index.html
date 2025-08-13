@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettó Bér Kalkulátor</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="ikonok/app_icon_192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div class="container">
+        <h1>Nettó Bér Kalkulátor</h1>
+
+        <div class="input-section">
+            <label for="hourlyRate">Nettó órabér (Ft):</label>
+            <input type="number" id="hourlyRate" value="0">
+            
+            <label>Szabadság és túlóra (kattintson a napokra):</label>
+            <div id="calendar-actions">
+                <button id="setLeaveDay">Szabadság kijelölése</button>
+                <button id="setOvertimeDay">Túlóra kijelölése</button>
+            </div>
+            <div id="calendar-container"></div>
+            <input type="hidden" id="leaveDays">
+            <input type="hidden" id="overtimeDays">
+
+            <label for="monthSelect">Hónap:</label>
+            <select id="monthSelect"></select>
+
+            <div class="checkbox-container">
+                <input type="checkbox" id="performanceBonus">
+                <label for="performanceBonus">Mozgóbér (10%)</label>
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="shiftStart" checked>
+                <label for="shiftStart">Hónap délelőttös héttel kezdődik</label>
+            </div>
+
+            <button onclick="calculateSalary()">Számítás</button>
+            <button id="showHistoryBtn">Előzmények</button>
+        </div>
+
+        <div class="result-section">
+            <div class="summary-card">
+                <h3>Nettó Havi Fizetés</h3>
+                <span id="finalSalary">0 Ft</span>
+            </div>
+            <div class="summary-card">
+                <h3>Túlóra Bér</h3>
+                <span id="overtimePay">0 Ft</span>
+            </div>
+
+            <table id="detailsTable">
+                <thead>
+                    <tr>
+                        <th>Dátum</th>
+                        <th>Rendes óra</th>
+                        <th>Túlóra</th>
+                        <th>Napi bér</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Előző hónapok</h2>
+            <div id="history-container"></div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
