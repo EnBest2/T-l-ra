@@ -79,7 +79,7 @@ function renderCalendar() {
                     delete overtimeData[dateString];
                 } else {
                     const hours = prompt('Hány órát túlórázott ezen a napon?');
-                    if (hours !== null && !isNaN(hours) && hours > 0) {
+                    if (hours !== null && !isNaN(hours) && parseFloat(hours) > 0) {
                         dayElement.classList.remove('leave');
                         dayElement.classList.add('overtime');
                         overtimeData[dateString] = parseFloat(hours);
@@ -197,7 +197,7 @@ function calculateSalary() {
             // Délutáni műszak: 13:30-21:30 (8 óra)
             else {
                 regularHours = 8;
-                const bonusHours = 3.5; // 18:00 - 21:30 között
+                const bonusHours = 3.5; // 18:00 - 21:30 között (3.5 óra)
                 dailyWage = (regularHours * hourlyRate) + (bonusHours * hourlyRate * 0.3);
             }
             dailyLabel = `${regularHours} óra`;
@@ -313,6 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
+    document.getElementById('monthSelect').addEventListener('change', () => {
+        renderCalendar();
+        calculateSalary();
+    });
 
     const modal = document.getElementById('historyModal');
     const closeBtn = document.querySelector('.close-btn');
