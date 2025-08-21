@@ -134,8 +134,16 @@ function populateMonthSelect() {
 }
 
 function calculateSalary() {
-    // Frissített értékek a bérpapír alapján
-    const hourlyRate = 1934;
+    const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
+    
+    // Ellenőrzés, hogy van-e érvényes órabér
+    if (isNaN(hourlyRate) || hourlyRate <= 0) {
+        document.getElementById('finalSalary').textContent = '0 Ft';
+        document.getElementById('overtimePay').textContent = '0 Ft';
+        document.querySelector('#detailsTable tbody').innerHTML = '';
+        return;
+    }
+
     const overtimeRate = hourlyRate * 1.8;
     const shiftBonusRate = hourlyRate * 0.3;
 
@@ -326,7 +334,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
     
+    // A calculate gomb már létezik
     const calculateButton = document.querySelector('button[onclick="calculateSalary()"]');
+    if (calculateButton) {
+        calculateButton.addEventListener('click', calculateSalary);
+    }
+
+    // Új eseménykezelők a dinamikus frissítéshez
+    document.getElementById('hourlyRate').addEventListener('input', calculateSalary);
+    document.getElementById('monthSelect').addEventListener('change', () => {
+        renderCalendar();
+        calculateSalary();
+    });
+    document.getElementById('performanceBonus').addEventListener('change', calculateSalary);
+    document.getElementById('shiftStart').addEventListener('change', calculateSalary);
+
     const saveButton = document.createElement('button');
     saveButton.id = 'saveCalculationBtn';
     saveButton.textContent = 'Mentés';
