@@ -134,16 +134,16 @@ function populateMonthSelect() {
 }
 
 function calculateSalary() {
-    const hourlyRate = parseFloat(document.getElementById('hourlyRate').value);
+    // Frissített értékek a bérpapír alapján
+    const hourlyRate = 1934;
+    const overtimeRate = hourlyRate * 1.8;
+    const shiftBonusRate = hourlyRate * 0.3;
+
     const selectedMonth = document.getElementById('monthSelect').value;
     const isPerformanceBonusEnabled = document.getElementById('performanceBonus').checked;
     const isMorningShiftStart = document.getElementById('shiftStart').checked;
     const leaveDays = document.getElementById('leaveDays').value.split(',').filter(s => s);
     overtimeData = JSON.parse(document.getElementById('overtimeDays').value || '{}');
-
-    if (isNaN(hourlyRate) || hourlyRate <= 0) {
-        return;
-    }
 
     const [year, month] = selectedMonth.split('-');
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -151,6 +151,9 @@ function calculateSalary() {
 
     let totalSalary = 0;
     let totalOvertimePay = 0;
+    let totalRegularPay = 0;
+    let totalShiftBonus = 0;
+
     let tableBody = document.querySelector('#detailsTable tbody');
     tableBody.innerHTML = '';
     
@@ -173,18 +176,14 @@ function calculateSalary() {
             dailyWage = regularHours * hourlyRate;
             dailyLabel = isHoliday ? 'Ünnepnap' : 'Szabadság';
         } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+            dailyLabel = 'Hétvége';
+            dailyWage = 0;
             if (isOvertime) {
-                // Hétvégi túlóra
                 currentOvertimeHours = overtimeData[dateString];
-                dailyWage = currentOvertimeHours * hourlyRate * 1.8;
+                dailyWage = currentOvertimeHours * overtimeRate;
                 totalOvertimePay += dailyWage;
-                dailyLabel = 'Túlóra';
-            } else {
-                dailyLabel = 'Hétvége';
-                dailyWage = 0;
             }
         } else { // Hétköznap
-            // Rendes munkaidő bér kiszámítása
             let weekNumber = Math.ceil((day + new Date(year, month - 1, 1).getDay()) / 7);
             if (new Date(year, month - 1, 1).getDay() === 0) {
                 weekNumber = Math.ceil((day + 1) / 7);
@@ -195,18 +194,19 @@ function calculateSalary() {
             if (currentShiftIsMorning) {
                 regularHours = 8;
                 dailyWage = regularHours * hourlyRate;
-                dailyLabel = '8 óra';
+                dailyLabel = `${regularHours} óra`;
             } else {
                 regularHours = 8;
                 const bonusHours = 3.5;
-                dailyWage = (regularHours) * hourlyRate + (bonusHours * hourlyRate * 0.3);
-                dailyLabel = '8 óra';
+                const bonusPay = bonusHours * shiftBonusRate;
+                dailyWage = (regularHours * hourlyRate) + bonusPay;
+                dailyLabel = `${regularHours} óra + pótlék`;
+                totalShiftBonus += bonusPay;
             }
             
-            // Túlóra hozzáadása, ha van
             if (isOvertime) {
                 currentOvertimeHours = overtimeData[dateString];
-                const overtimePayForDay = currentOvertimeHours * hourlyRate * 1.8;
+                const overtimePayForDay = currentOvertimeHours * overtimeRate;
                 dailyWage += overtimePayForDay;
                 totalOvertimePay += overtimePayForDay;
             }
@@ -216,13 +216,16 @@ function calculateSalary() {
 
         const row = tableBody.insertRow();
         row.insertCell(0).textContent = `${day}. (${currentDate.toLocaleDateString('hu-HU', { weekday: 'short' })})`;
-        row.insertCell(1).textContent = dailyLabel;
+        row.insertCell(1).textContent = regularHours > 0 ? `${regularHours} óra` : '-';
         row.insertCell(2).textContent = currentOvertimeHours > 0 ? `${currentOvertimeHours} óra` : '-';
         row.insertCell(3).textContent = `${Math.round(dailyWage).toLocaleString('hu-HU')} Ft`;
     }
-
+    
+    // Mozgóbér hozzáadása az alapbérhez
     if (isPerformanceBonusEnabled) {
-        totalSalary *= 1.1; // 10% mozgóbér
+        let totalBaseSalary = totalSalary - totalOvertimePay - totalShiftBonus;
+        let performanceBonus = totalBaseSalary * 0.1;
+        totalSalary += performanceBonus;
     }
     
     document.getElementById('finalSalary').textContent = `${Math.round(totalSalary).toLocaleString('hu-HU')} Ft`;
