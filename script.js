@@ -168,15 +168,23 @@ function calculateSalary() {
         const isLeave = leaveDays.includes(dateString);
         const isOvertime = overtimeData[dateString];
 
-        // Alap napi bér kiszámítása
         if (isHoliday || isLeave) {
             regularHours = 8;
             dailyWage = regularHours * hourlyRate;
             dailyLabel = isHoliday ? 'Ünnepnap' : 'Szabadság';
         } else if (dayOfWeek === 0 || dayOfWeek === 6) {
-            dailyLabel = 'Hétvége';
-            dailyWage = 0;
-        } else {
+            if (isOvertime) {
+                // Hétvégi túlóra
+                currentOvertimeHours = overtimeData[dateString];
+                dailyWage = currentOvertimeHours * hourlyRate * 1.8;
+                totalOvertimePay += dailyWage;
+                dailyLabel = 'Túlóra';
+            } else {
+                dailyLabel = 'Hétvége';
+                dailyWage = 0;
+            }
+        } else { // Hétköznap
+            // Rendes munkaidő bér kiszámítása
             let weekNumber = Math.ceil((day + new Date(year, month - 1, 1).getDay()) / 7);
             if (new Date(year, month - 1, 1).getDay() === 0) {
                 weekNumber = Math.ceil((day + 1) / 7);
@@ -184,27 +192,24 @@ function calculateSalary() {
 
             let currentShiftIsMorning = (isMorningShiftStart && weekNumber % 2 !== 0) || (!isMorningShiftStart && weekNumber % 2 === 0);
 
-            // Délelőtti műszak: 5:30-13:30 (8 óra)
             if (currentShiftIsMorning) {
                 regularHours = 8;
                 dailyWage = regularHours * hourlyRate;
-            }
-            // Délutáni műszak: 13:30-21:30 (8 óra)
-            else {
+                dailyLabel = '8 óra';
+            } else {
                 regularHours = 8;
                 const bonusHours = 3.5;
                 dailyWage = (regularHours) * hourlyRate + (bonusHours * hourlyRate * 0.3);
+                dailyLabel = '8 óra';
             }
-            dailyLabel = regularHours > 0 ? `${regularHours} óra` : 'Szabadnap';
-        }
-
-        // Túlóra bér hozzáadása a napi összeghez
-        if (isOvertime) {
-            currentOvertimeHours = overtimeData[dateString];
-            const overtimePayForDay = currentOvertimeHours * hourlyRate * 1.8;
-            dailyWage += overtimePayForDay;
-            totalOvertimePay += overtimePayForDay;
-            dailyLabel = (dailyLabel === 'Szabadnap' || dailyLabel === 'Hétvége') ? `Túlóra (${currentOvertimeHours} óra)` : `${dailyLabel}, Túlóra (${currentOvertimeHours} óra)`;
+            
+            // Túlóra hozzáadása, ha van
+            if (isOvertime) {
+                currentOvertimeHours = overtimeData[dateString];
+                const overtimePayForDay = currentOvertimeHours * hourlyRate * 1.8;
+                dailyWage += overtimePayForDay;
+                totalOvertimePay += overtimePayForDay;
+            }
         }
         
         totalSalary += dailyWage;
