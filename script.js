@@ -334,12 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
     
-    // A calculate gomb már létezik
-    const calculateButton = document.querySelector('button[onclick="calculateSalary()"]');
+    // Az új azonosítóval hivatkozunk a "Számítás" gombra
+    const calculateButton = document.getElementById('calculateBtn');
     if (calculateButton) {
         calculateButton.addEventListener('click', calculateSalary);
     }
-
+    
     // Új eseménykezelők a dinamikus frissítéshez
     document.getElementById('hourlyRate').addEventListener('input', calculateSalary);
     document.getElementById('monthSelect').addEventListener('change', () => {
