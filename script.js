@@ -24,7 +24,7 @@ function formatDate(date) {
 }
 
 let currentAction = 'none'; // 'leave' vagy 'overtime'
-let overtimeData = {};
+let overtimeData = {}; // Túlórák tárolása óraszámmal
 
 function setAction(action) {
     currentAction = action;
@@ -82,7 +82,7 @@ function renderCalendar() {
                     delete overtimeData[dateString];
                 } else {
                     let hours = prompt('Hány órát túlórázott ezen a napon?');
-                    if (hours === null) return; // Ha a felhasználó a Mégse gombra kattint
+                    if (hours === null) return;
                     hours = parseFloat(hours);
                     if (!isNaN(hours) && hours > 0) {
                         dayElement.classList.remove('leave');
@@ -311,6 +311,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setLeaveDay').addEventListener('click', () => setAction('leave'));
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
+    
+    // A saveCalculationBtn hozzáadása a meglévő "Számítás" gomb mellé
+    const calculateButton = document.querySelector('button[onclick="calculateSalary()"]');
+    const saveButton = document.createElement('button');
+    saveButton.id = 'saveCalculationBtn';
+    saveButton.textContent = 'Mentés';
+    saveButton.style.marginLeft = '10px';
+    calculateButton.parentNode.insertBefore(saveButton, calculateButton.nextSibling);
+
     document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
 
     const modal = document.getElementById('historyModal');
