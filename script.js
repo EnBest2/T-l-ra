@@ -24,7 +24,7 @@ function formatDate(date) {
 }
 
 let currentAction = 'none'; // 'leave' vagy 'overtime'
-let overtimeData = {}; // Túlórák tárolása óraszámmal
+let overtimeData = {};
 
 function setAction(action) {
     currentAction = action;
@@ -168,15 +168,11 @@ function calculateSalary() {
         const isLeave = leaveDays.includes(dateString);
         const isOvertime = overtimeData[dateString];
 
+        // Alap napi bér kiszámítása
         if (isHoliday || isLeave) {
             regularHours = 8;
             dailyWage = regularHours * hourlyRate;
             dailyLabel = isHoliday ? 'Ünnepnap' : 'Szabadság';
-        } else if (isOvertime) {
-            currentOvertimeHours = overtimeData[dateString];
-            dailyWage = currentOvertimeHours * hourlyRate * 1.8;
-            totalOvertimePay += dailyWage;
-            dailyLabel = 'Túlóra';
         } else if (dayOfWeek === 0 || dayOfWeek === 6) {
             dailyLabel = 'Hétvége';
             dailyWage = 0;
@@ -201,6 +197,16 @@ function calculateSalary() {
             }
             dailyLabel = regularHours > 0 ? `${regularHours} óra` : 'Szabadnap';
         }
+
+        // Túlóra bér hozzáadása a napi összeghez
+        if (isOvertime) {
+            currentOvertimeHours = overtimeData[dateString];
+            const overtimePayForDay = currentOvertimeHours * hourlyRate * 1.8;
+            dailyWage += overtimePayForDay;
+            totalOvertimePay += overtimePayForDay;
+            dailyLabel = (dailyLabel === 'Szabadnap' || dailyLabel === 'Hétvége') ? `Túlóra (${currentOvertimeHours} óra)` : `${dailyLabel}, Túlóra (${currentOvertimeHours} óra)`;
+        }
+        
         totalSalary += dailyWage;
 
         const row = tableBody.insertRow();
@@ -312,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
     
-    // A saveCalculationBtn hozzáadása a meglévő "Számítás" gomb mellé
     const calculateButton = document.querySelector('button[onclick="calculateSalary()"]');
     const saveButton = document.createElement('button');
     saveButton.id = 'saveCalculationBtn';
