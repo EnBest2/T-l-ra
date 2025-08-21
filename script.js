@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
     
-    // Az új azonosítóval hivatkozunk a "Számítás" gombra
+    // Hozzáadva az azonosítóval rendelkező gombhoz az eseménykezelő
     const calculateButton = document.getElementById('calculateBtn');
     if (calculateButton) {
         calculateButton.addEventListener('click', calculateSalary);
@@ -353,7 +353,12 @@ document.addEventListener('DOMContentLoaded', () => {
     saveButton.id = 'saveCalculationBtn';
     saveButton.textContent = 'Mentés';
     saveButton.style.marginLeft = '10px';
-    calculateButton.parentNode.insertBefore(saveButton, calculateButton.nextSibling);
+    // Módosítva a beszúrási pont
+    const calculateButtonParent = calculateButton.parentNode;
+    if (calculateButtonParent) {
+        calculateButtonParent.insertBefore(saveButton, calculateButton.nextSibling);
+    }
+
 
     document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
 
