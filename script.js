@@ -334,13 +334,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setOvertimeDay').addEventListener('click', () => setAction('overtime'));
     document.getElementById('showHistoryBtn').addEventListener('click', showHistoryModal);
     
-    // Hozzáadva az azonosítóval rendelkező gombhoz az eseménykezelő
-    const calculateButton = document.getElementById('calculateBtn');
-    if (calculateButton) {
-        calculateButton.addEventListener('click', calculateSalary);
+    // A számítás gomb eltávolítva, és a mentés gomb kerül a helyére
+    const mainButtonContainer = document.querySelector('.main-actions'); // A gombokat tartalmazó div
+    if (mainButtonContainer) {
+        // Ellenőrizze, hogy a számítás gomb létezik-e, mielőtt eltávolítja
+        const calculateButton = mainButtonContainer.querySelector('button');
+        if (calculateButton) {
+            calculateButton.remove();
+        }
+
+        const saveButton = document.createElement('button');
+        saveButton.id = 'saveCalculationBtn';
+        saveButton.textContent = 'Mentés';
+        mainButtonContainer.appendChild(saveButton);
+
+        document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
     }
     
-    // Új eseménykezelők a dinamikus frissítéshez
+    // Fontos, hogy a kalkuláció eseménykezelője itt maradjon, hogy dinamikusan frissüljön
     document.getElementById('hourlyRate').addEventListener('input', calculateSalary);
     document.getElementById('monthSelect').addEventListener('change', () => {
         renderCalendar();
@@ -348,19 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('performanceBonus').addEventListener('change', calculateSalary);
     document.getElementById('shiftStart').addEventListener('change', calculateSalary);
-
-    const saveButton = document.createElement('button');
-    saveButton.id = 'saveCalculationBtn';
-    saveButton.textContent = 'Mentés';
-    saveButton.style.marginLeft = '10px';
-    // Módosítva a beszúrási pont
-    const calculateButtonParent = calculateButton.parentNode;
-    if (calculateButtonParent) {
-        calculateButtonParent.insertBefore(saveButton, calculateButton.nextSibling);
-    }
-
-
-    document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);
 
     const modal = document.getElementById('historyModal');
     const closeBtn = document.querySelector('.close-btn');
